@@ -214,10 +214,15 @@ async function connectToWA() {
   const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/sessions/')
   var { version } = await fetchLatestBaileysVersion()
 
+  /* Sanitize phone number helper */
+  function formatPhone(phone) {
+    return phone.replace(/[^0-9]/g, '');
+  }
+
   const conn = makeWASocket({
     logger: P({ level: 'silent' }),
     printQRInTerminal: !currentPhone, // Only print QR if no phone is being used for pairing (fallback)
-    browser: Browsers.macOS("Firefox"),
+    browser: ["Ubuntu", "Chrome", "20.0.04"], // Better compatibility for pairing codes
     syncFullHistory: true,
     auth: state,
     version
@@ -228,15 +233,16 @@ async function connectToWA() {
     const waitForPhone = setInterval(async () => {
       if (currentPhone) {
         clearInterval(waitForPhone);
-        console.log("Phone number detected:", currentPhone);
-        await sleep(2000);
+        let cleanPhone = formatPhone(currentPhone);
+        console.log("Phone number detected:", cleanPhone);
+        await sleep(2000); // Wait for socket to stabilize
         try {
-          const code = await conn.requestPairingCode(currentPhone);
+          const code = await conn.requestPairingCode(cleanPhone);
           console.log("Pairing Code Generated:", code);
           pair_code = code;
         } catch (err) {
           console.log("Error requesting pairing code:", err);
-          pair_code = "ERROR";
+          pair_code = "ERROR: " + err.message;
         }
       }
     }, 1000);
