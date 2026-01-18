@@ -415,7 +415,7 @@ async function connectToWA() {
     logger: P({ level: 'silent' }),
     printQRInTerminal: !currentPhone, // Only print QR if no phone is being used for pairing (fallback)
     browser: ["Ubuntu", "Chrome", "20.0.04"], // Better compatibility for pairing codes
-    syncFullHistory: true,
+    syncFullHistory: false,
     auth: state,
     version
   })
