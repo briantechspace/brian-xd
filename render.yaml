@@ -6,7 +6,7 @@ services:
     repo: https://github.com/briantechspace/Brian-XD
     branch: main
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node index.js
     autoDeploy: true
     envVars:
       - key: SESSION_ID
