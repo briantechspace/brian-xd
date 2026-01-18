@@ -424,10 +424,18 @@ async function connectToWA() {
   const conn = makeWASocket({
     logger: P({ level: 'silent' }),
     printQRInTerminal: !currentPhone, // Only print QR if no phone is being used for pairing (fallback)
-    browser: ["Ubuntu", "Chrome", "20.0.04"], // Better compatibility for pairing codes
+    browser: ["Ubuntu", "Chrome", "20.0.04"],
     syncFullHistory: false,
     auth: state,
-    version
+    version,
+    connectTimeoutMs: 60000,
+    defaultQueryTimeoutMs: 0,
+    keepAliveIntervalMs: 10000,
+    emitOwnEvents: true,
+    fireInitQueries: true,
+    generateHighQualityLinkPreview: true,
+    retryRequestDelayMs: 250,
+    markOnlineOnConnect: true,
   })
 
   if (!conn.authState.creds.registered) {
