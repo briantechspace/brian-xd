@@ -43,7 +43,7 @@ const Crypto = require('crypto')
 const path = require('path')
 const prefix = config.PREFIX
 
-const ownerNumber = ['254768116434']
+const ownerNumber = ['254788278437']
 
 const tempDir = path.join(os.tmpdir(), 'cache-temp')
 if (!fs.existsSync(tempDir)) {
@@ -75,73 +75,264 @@ app.use(express.urlencoded({ extended: true }));
 
 let pair_code = "";
 let isLinked = false;
+let requestCount = 0;
+let startTime = Date.now();
 
-// Serve Pairing Page
+// Serve Dashboard Page
 app.get("/", (req, res) => {
-  if (isLinked) {
-    return res.send(`
-            <html>
-                <body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#0f0f0f;color:#25d366;font-family:sans-serif;">
-                    <div style="text-align:center;">
-                        <h1>✅ Bot is Active</h1>
-                        <p>Your session is connected.</p>
-                    </div>
-                </body>
-            </html>
-        `);
-  }
+  const uptime = Math.floor((Date.now() - startTime) / 1000);
+  const hours = Math.floor(uptime / 3600);
+  const minutes = Math.floor((uptime % 3600) / 60);
+  const seconds = uptime % 60;
+  const uptimeStr = `${hours}h ${minutes}m ${seconds}s`;
+
+  const sessions = isLinked ? 1 : 0;
+  const statusColor = isLinked ? "#00ff88" : "#ff0055";
+  const statusText = isLinked ? "System Active" : "Waiting for Pairing";
 
   res.send(`
-    <html>
-        <head>
-            <title>Brian-XD Linker</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body { background: #0f0f0f; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; margin: 0; }
-                .card { background: #1f1f1f; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); text-align: center; width: 90%; max-width: 400px; }
-                input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #333; background: #2a2a2a; color: white; border-radius: 6px; box-sizing: border-box; }
-                button { width: 100%; padding: 12px; background: #25d366; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-                button:hover { background: #1ebc57; }
-                #code { font-size: 2rem; letter-spacing: 5px; margin: 20px 0; color: #25d366; font-weight: bold; display: none; }
-            </style>
-        </head>
-        <body>
-            <div class="card">
-                <h2>🔗 Pair Device</h2>
-                <p>Enter your phone number with country code (e.g., 254...)</p>
-                <input type="text" id="phone" placeholder="254700000000" />
-                <button onclick="getCode()" id="btn">Get Pairing Code</button>
-                <div id="code"></div>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Brian-XD | High-Performance WhatsApp Bot</title>
+        <style>
+            :root {
+                --primary: #00ff88;
+                --secondary: #00b8ff;
+                --bg: #050505;
+                --surface: #101010;
+                --text: #e0e0e0;
+            }
+            body {
+                background-color: var(--bg);
+                color: var(--text);
+                font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+            }
+            header {
+                padding: 2rem;
+                text-align: center;
+                border-bottom: 1px solid #222;
+                background: linear-gradient(180deg, rgba(0,255,136,0.05) 0%, rgba(0,0,0,0) 100%);
+            }
+            h1 {
+                margin: 0;
+                font-size: 2.5rem;
+                background: linear-gradient(90deg, var(--primary), var(--secondary));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
+            .container {
+                flex: 1;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 2rem;
+                display: flex;
+                flex-direction: column;
+                gap: 2rem;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1.5rem;
+            }
+            .card {
+                background: var(--surface);
+                border: 1px solid #222;
+                border-radius: 16px;
+                padding: 1.5rem;
+                transition: transform 0.2s, box-shadow 0.2s;
+                position: relative;
+                overflow: hidden;
+            }
+            .card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0,255,136,0.1);
+                border-color: #333;
+            }
+            .card-title {
+                color: #888;
+                font-size: 0.9rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 0.5rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .card-value {
+                font-size: 2.5rem;
+                font-weight: 700;
+                color: white;
+            }
+            .status-dot {
+                height: 12px;
+                width: 12px;
+                background-color: ${statusColor};
+                border-radius: 50%;
+                display: inline-block;
+                box-shadow: 0 0 10px ${statusColor};
+                animation: pulse 2s infinite;
+            }
+            .pairing-section {
+                background: var(--surface);
+                border: 1px solid #333;
+                border-radius: 16px;
+                padding: 2rem;
+                text-align: center;
+                margin-top: 2rem;
+            }
+            input {
+                background: #0a0a0a;
+                border: 1px solid #333;
+                padding: 1rem;
+                color: white;
+                border-radius: 8px;
+                width: 100%;
+                max-width: 300px;
+                margin-bottom: 1rem;
+                font-size: 1.1rem;
+            }
+            button {
+                background: var(--primary);
+                color: black;
+                border: none;
+                padding: 1rem 2rem;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 1.1rem;
+                cursor: pointer;
+                transition: 0.2s;
+            }
+            button:hover {
+                background: #00cc6a;
+                transform: scale(1.02);
+            }
+            #code-display {
+                margin-top: 2rem;
+                font-size: 3rem;
+                font-family: monospace;
+                letter-spacing: 10px;
+                color: var(--primary);
+                text-shadow: 0 0 20px rgba(0,255,136,0.3);
+                display: none;
+            }
+            @keyframes pulse {
+                0% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+                70% { opacity: 0.8; box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
+                100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+            }
+            .owner-tag {
+                background: rgba(255,255,255,0.05);
+                padding: 0.5rem 1rem;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                display: inline-block;
+                border: 1px solid #222;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Brian-XD</h1>
+            <p style="color: #666;">Advanced WhatsApp Automation</p>
+        </header>
+
+        <div class="container">
+            <div class="stats-grid">
+                <div class="card">
+                    <div class="card-title">Status</div>
+                    <div class="card-value" style="font-size: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                        <div class="status-dot"></div> ${statusText}
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Active Sessions</div>
+                    <div class="card-value">${sessions}</div>
+                    <div style="color: #444; font-size: 0.8rem; margin-top: 5px;">Linked Devices</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Total Requests</div>
+                    <div class="card-value">${requestCount}</div>
+                    <div style="color: #444; font-size: 0.8rem; margin-top: 5px;">Messages Processed</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Uptime</div>
+                    <div class="card-value" style="font-size: 1.8rem;">${uptimeStr}</div>
+                </div>
             </div>
-            <script>
-                async function getCode() {
-                    const phone = document.getElementById('phone').value.replace(/[^0-9]/g, '');
-                    if(!phone) return alert('Please enter a number!');
+
+            ${!isLinked ? `
+            <div class="pairing-section">
+                <h2 style="margin-top: 0;">🔗 Pair New Device</h2>
+                <p style="color: #888; margin-bottom: 2rem;">Enter your WhatsApp number to link this bot instance.</p>
+                <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                    <input type="text" id="phone" placeholder="e.g. 254788278437" />
+                    <button onclick="getCode()" id="btn">Generate Code</button>
+                </div>
+                <div id="code-display"></div>
+                <div class="owner-tag">Owner: 254788278437</div>
+            </div>
+            ` : `
+            <div class="pairing-section" style="border-color: rgba(0,255,136,0.2);">
+                <h2>🚀 System Operational</h2>
+                <p>The bot is currently linked and processing messages.</p>
+                <div class="owner-tag">Owner: 254788278437</div>
+            </div>
+            `}
+        </div>
+
+        <script>
+            async function getCode() {
+                const phoneInput = document.getElementById('phone');
+                const phone = phoneInput.value.replace(/[^0-9]/g, '');
+                
+                if(!phone) return alert('Please enter a valid number');
+                
+                const btn = document.getElementById('btn');
+                const codeDisplay = document.getElementById('code-display');
+                
+                btn.disabled = true;
+                btn.textContent = 'CONNECTING...';
+                codeDisplay.style.display = 'none';
+                
+                try {
+                    const res = await fetch('/pair?phone=' + phone);
+                    const data = await res.json();
                     
-                    const btn = document.getElementById('btn');
-                    btn.disabled = true;
-                    btn.innerText = 'Generating...';
-                    
-                    try {
-                        const res = await fetch('/pair?phone=' + phone);
-                        const data = await res.json();
-                        if(data.code) {
-                            document.getElementById('code').innerText = data.code;
-                            document.getElementById('code').style.display = 'block';
-                            btn.innerText = 'Code Generated!';
-                        } else {
-                            alert('Error: ' + (data.error || 'Unknown error'));
-                            btn.disabled = false;
-                            btn.innerText = 'Get Pairing Code';
-                        }
-                    } catch(e) {
-                        alert('Error requesting code');
-                        btn.disabled = false;
-                        btn.innerText = 'Get Pairing Code';
+                    if(data.code) {
+                        codeDisplay.textContent = data.code.split('').join(' ');
+                        codeDisplay.style.display = 'block';
+                        btn.textContent = 'CODE GENERATED';
+                        btn.style.background = '#333';
+                    } else {
+                        throw new Error(data.error || 'Failed');
                     }
+                } catch(e) {
+                    alert('Error: ' + e.message);
+                    btn.disabled = false;
+                    btn.textContent = 'Generate Code';
                 }
-            </script>
-        </body>
+            }
+
+            // Auto-refresh stats every 5 seconds
+            /*
+            setInterval(() => {
+                location.reload(); 
+            }, 30000);
+            */
+        </script>
+    </body>
     </html>
     `);
 });
@@ -308,6 +499,10 @@ async function connectToWA() {
   //=============readstatus=======
 
   conn.ev.on('messages.upsert', async (mek) => {
+    try {
+      requestCount++; // Increment global request counter
+    } catch (e) { }
+
     mek = mek.messages[0]
     if (!mek.message) return
     mek.message = (getContentType(mek.message) === 'ephemeralMessage')
