@@ -102,12 +102,12 @@ app.get("/", (req, res) => {
             :root {
                 --primary: #00ff88;
                 --secondary: #00b8ff;
-                --bg: #050505;
-                --surface: #101010;
+                --bg: #001f3f;
+                --surface: #002b55;
                 --text: #e0e0e0;
             }
             body {
-                background-color: var(--bg);
+                background: linear-gradient(135deg, #001f3f 0%, #003366 100%);
                 color: var(--text);
                 font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                 margin: 0;
@@ -118,8 +118,8 @@ app.get("/", (req, res) => {
             header {
                 padding: 2rem;
                 text-align: center;
-                border-bottom: 1px solid #222;
-                background: linear-gradient(180deg, rgba(0,255,136,0.05) 0%, rgba(0,0,0,0) 100%);
+                border-bottom: 1px solid rgba(0, 184, 255, 0.2);
+                background: rgba(0, 31, 63, 0.8);
             }
             h1 {
                 margin: 0;
@@ -158,10 +158,10 @@ app.get("/", (req, res) => {
             .card:hover {
                 transform: translateY(-5px);
                 box-shadow: 0 10px 30px rgba(0,255,136,0.1);
-                border-color: #333;
+                border-color: #00b8ff;
             }
             .card-title {
-                color: #888;
+                color: #88ccff;
                 font-size: 0.9rem;
                 text-transform: uppercase;
                 letter-spacing: 1px;
@@ -337,6 +337,16 @@ app.get("/", (req, res) => {
     </html>
     `);
 });
+
+// Keep-Alive Ping
+app.get("/ping", (req, res) => res.send("pong"));
+setInterval(() => {
+  try {
+    require('https').get(`https://render.com`); // Basic keep-alive activity
+    // Note: Self-pinging locally doesn't always prevent sleep on Render free tier,
+    // but this endpoint is now available for external uptimerobot services.
+  } catch (e) { }
+}, 300000); // Every 5 minutes
 
 // Start Server
 app.listen(port, () => console.log(`Server listening on port https://localhost:${port}`));
