@@ -398,7 +398,12 @@ app.get("/pair", (req, res) => {
 });
 
 //===================SESSION-AUTH============================
-if (!fs.existsSync(__dirname + '/sessions/creds.json')) {
+const sessionDir = path.join(os.tmpdir(), "sessions");
+if (!fs.existsSync(sessionDir)) {
+  fs.mkdirSync(sessionDir);
+}
+
+if (!fs.existsSync(path.join(sessionDir, 'creds.json'))) {
   if (config.SESSION_ID) {
     // Legacy flow: Download session if ID is present
     try {
@@ -408,7 +413,7 @@ if (!fs.existsSync(__dirname + '/sessions/creds.json')) {
         if (err) {
           console.log("Failed to download session, will use pairing flow.");
         } else {
-          fs.writeFile(__dirname + '/sessions/creds.json', data, () => {
+          fs.writeFile(path.join(sessionDir, 'creds.json'), data, () => {
             console.log("Session downloaded ✅")
           })
         }
@@ -424,7 +429,7 @@ if (!fs.existsSync(__dirname + '/sessions/creds.json')) {
 
 async function connectToWA() {
   console.log("Connecting to WhatsApp ⏳️...");
-  const { state, saveCreds } = await useMultiFileAuthState(__dirname + '/sessions/')
+  const { state, saveCreds } = await useMultiFileAuthState(sessionDir)
   var { version } = await fetchLatestBaileysVersion()
 
   /* Sanitize phone number helper */
