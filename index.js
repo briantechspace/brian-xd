@@ -358,9 +358,7 @@ app.get("/ping", (req, res) => res.send("pong"));
 
 
 // Start Server
-app.listen(port, () => console.log(`Server listening on port https://localhost:${port}`));
 
-module.exports = app;
 
 // Global variable to handle manual connection trigger
 let currentPhone = null;
@@ -1169,10 +1167,12 @@ async function connectToWA() {
   conn.serializeM = mek => sms(conn, mek, store);
 }
 
-app.get("/", (req, res) => {
-  res.send(" BRIAN-XD is started  ✅");
-});
-app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
-setTimeout(() => {
-  connectToWA()
-}, 4000);
+// Export app for Vercel
+module.exports = app;
+
+// Ensure connectToWA runs (but Vercel warning applies)
+// Ensure connectToWA runs (but Vercel warning applies)
+if (require.main === module) {
+  app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
+  connectToWA();
+}
