@@ -355,16 +355,12 @@ app.get("/", (req, res) => {
 
 // Keep-Alive Ping
 app.get("/ping", (req, res) => res.send("pong"));
-setInterval(() => {
-  try {
-    require('https').get(`https://render.com`); // Basic keep-alive activity
-    // Note: Self-pinging locally doesn't always prevent sleep on Render free tier,
-    // but this endpoint is now available for external uptimerobot services.
-  } catch (e) { }
-}, 300000); // Every 5 minutes
+
 
 // Start Server
 app.listen(port, () => console.log(`Server listening on port https://localhost:${port}`));
+
+module.exports = app;
 
 // Global variable to handle manual connection trigger
 let currentPhone = null;
