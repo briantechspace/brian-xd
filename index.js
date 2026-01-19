@@ -65,6 +65,21 @@ const clearTempDir = () => {
 // Clear the temp directory every 5 minutes
 setInterval(clearTempDir, 5 * 60 * 1000);
 
+// Load Plugins
+fs.readdir('./plugins/', (err, files) => {
+  if (err) return console.log(err);
+  files.forEach((file) => {
+    if (path.extname(file).toLowerCase() == '.js') {
+      try {
+        require('./plugins/' + file);
+        console.log(`[PLUGIN] Loaded: ${file}`);
+      } catch (e) {
+        console.log(`[PLUGIN ERROR] ${file}: ${e}`);
+      }
+    }
+  });
+});
+
 //===================SESSION-AUTH============================
 const express = require("express");
 const app = express();
