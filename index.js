@@ -479,7 +479,7 @@ async function connectToWA() {
     const { connection, lastDisconnect } = update
     if (connection === 'close') {
       isLinked = false;
-      let reason = new DisconnectReason(lastDisconnect.error?.output?.statusCode);
+      let reason = lastDisconnect.error?.output?.statusCode;
       if (lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut) {
         connectToWA()
       } else {
