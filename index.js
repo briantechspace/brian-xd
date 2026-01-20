@@ -324,6 +324,12 @@ app.get("/", (req, res) => {
                 
                 try {
                     const res = await fetch('/pair?phone=' + phone);
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.indexOf("application/json") === -1) {
+                        const text = await res.text();
+                        console.error("Non-JSON Response:", text);
+                        throw new Error("Server Error: " + (text.length > 100 ? text.substring(0, 100) + "..." : text));
+                    }
                     const data = await res.json();
                     
                     if(data.code) {

@@ -15,7 +15,7 @@
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@vitalets/google-translate-api": "^9.2.0",
     "@dark-yasiya/scrap": "1.0.1",
-    "pino": "^9.6.0",
+    "pino": "^7.0.5",
     "pm2": "^6.0.5",
     "express": "^4.21.2",
     "moment-timezone": "^0.5.46",
