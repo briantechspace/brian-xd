@@ -324,21 +324,20 @@ app.get("/", (req, res) => {
                 
                 try {
                     const res = await fetch('/pair?phone=' + phone);
-                    const contentType = res.headers.get("content-type");
-                    if (contentType && contentType.indexOf("application/json") === -1) {
-                        const text = await res.text();
-                        console.error("Non-JSON Response:", text);
-                        throw new Error("Server Error: " + (text.length > 100 ? text.substring(0, 100) + "..." : text));
-                    }
-                    const data = await res.json();
-                    
-                    if(data.code) {
-                        codeDisplay.textContent = data.code.split('').join(' ');
-                        codeDisplay.style.display = 'block';
-                        btn.textContent = 'CODE GENERATED';
-                        btn.style.background = '#333';
-                    } else {
-                        throw new Error(data.error || 'Failed');
+                    const text = await res.text(); // Read text first to avoid JSON error
+                    try {
+                        const data = JSON.parse(text);
+                        if(data.code) {
+                            codeDisplay.textContent = data.code.split('').join(' ');
+                            codeDisplay.style.display = 'block';
+                            btn.textContent = 'CODE GENERATED';
+                            btn.style.background = '#333';
+                        } else {
+                            throw new Error(data.error || 'Failed');
+                        }
+                    } catch (err) {
+                        console.error("Invalid JSON:", text);
+                        throw new Error("Server Response Error: " + (text ? text : "Empty Response"));
                     }
                 } catch(e) {
                     alert('Error: ' + e.message);
@@ -373,22 +372,16 @@ app.get("/pair", (req, res) => {
   let phone = req.query.phone;
   if (!phone) return res.json({ error: "Provide phone number" });
 
+  console.log(`[PAIR] Request received for: ${phone}`);
+
   // Trigger the connection with this phone number
   currentPhone = phone;
-  // We'll expose a function or restart the socket logic to respond
-  // For simplicity, we can restart the process or signal the running loop found below.
-  // However, since connectToWA runs in a loop, we need to inject the number into it.
-
-  // A simple event emitter-like approach or just setting the variable might work if we restart the connection logic
-  // Let's rely on the connectToWA function to pick up 'currentPhone' if it's restarting, 
-  // OR we force a restart if it's idling.
-
-  // Better approach: connectToWA checks 'currentPhone' if no session exists
 
   // Return a promise that resolves when code is generated
   const checkCode = setInterval(() => {
     if (pair_code) {
       clearInterval(checkCode);
+      console.log(`[PAIR] Sending code: ${pair_code}`);
       res.json({ code: pair_code });
       pair_code = ""; // Clear after sending
     }
@@ -397,8 +390,12 @@ app.get("/pair", (req, res) => {
   // Timeout after 30 seconds
   setTimeout(() => {
     clearInterval(checkCode);
-    if (!res.headersSent) res.json({ error: "Timeout generating code" });
+    if (!res.headersSent) {
+      console.log(`[PAIR] Timeout for: ${phone}`);
+      res.status(504).json({ error: "Timeout generating code" });
+    }
   }, 30000);
+}, 30000);
 });
 
 //===================SESSION-AUTH============================
