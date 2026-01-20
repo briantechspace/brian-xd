@@ -4,7 +4,7 @@
   "description": "A WhatsApp Bot Created Brian",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 start index.js --deep-monitoring --attach --name BRIAN-XD",
+    "start": "node index.js",
     "stop": "pm2 stop BRIAN-XD",
     "restart": "pm2 restart BRIAN-XD"
   },

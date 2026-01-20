@@ -1167,12 +1167,17 @@ async function connectToWA() {
   conn.serializeM = mek => sms(conn, mek, store);
 }
 
-// Export app for Vercel
-module.exports = app;
-
-// Ensure connectToWA runs (but Vercel warning applies)
-// Ensure connectToWA runs (but Vercel warning applies)
+// Keep active
 if (require.main === module) {
-  app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
+  app.listen(port, () => {
+    console.log(`Server listening on port http://localhost:${port}`);
+    // "Never Sleep" Self-Ping
+    setInterval(() => {
+      const target = process.env.RENDER_EXTERNAL_URL || `http://localhost:${port}`;
+      const url = `${target}/ping`;
+      console.log(`Pinging ${url} to keep active...`);
+      axios.get(url).catch(e => console.error(`Ping error: ${e.message}`));
+    }, 5 * 60 * 1000); // Ping every 5 minutes
+  });
   connectToWA();
 }
