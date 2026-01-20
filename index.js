@@ -395,7 +395,7 @@ app.get("/pair", (req, res) => {
       res.status(504).json({ error: "Timeout generating code" });
     }
   }, 30000);
-}, 30000);
+
 });
 
 //===================SESSION-AUTH============================
